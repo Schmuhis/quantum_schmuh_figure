@@ -4,6 +4,7 @@
 #include "Led.h"
 #include "Servo.h"
 #include "Proximity.h"
+#include "SD_speaker.h"
 
 #define wifi_ssid "DB Shop"
 #define wifi_password "Schmatzne"
@@ -39,6 +40,9 @@ Player* player1 = new Player();
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+Audio audio;
+bool active_sound = false;
+
 void setup() {
   Serial.begin(9600);
   setup_wifi();
@@ -48,6 +52,9 @@ void setup() {
   setup_Servo();
   setup_Led();
   setup_Proximity();
+
+  setup_SD();
+  setup_speaker();
 
   pinMode(LED_BUILTIN, OUTPUT);
 
@@ -80,7 +87,7 @@ void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("quantumschmuhh")) {
+    if (client.connect("quantumschmuhhh")) {
       Serial.println("connected");
 
     } else {
@@ -109,6 +116,10 @@ void loop() {
     client.publish("sepp", String("Herr Winkla! \nIch bin nicht der Trache!!!").c_str(), true);
 
     digitalWrite(LED_BUILTIN, !alive);
+  }
+
+  if (active_sound) {
+    audio.loop();
   }
 }
 
@@ -204,6 +215,7 @@ void sound(String value) {
   String answer = "Never gonna sepp u up";
   Serial.println(answer);
   client.publish("answer", answer.c_str(), true);
+  play_sound(value);
 }
 
 void invalid_command() {
@@ -211,4 +223,41 @@ void invalid_command() {
   Serial.println(answer);
   client.publish("invalid command", answer.c_str(), true);
 }
+
+void setup_SD() {
+    pinMode(SD_CS, OUTPUT);      
+    digitalWrite(SD_CS, HIGH);
+    SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+    if(!SD.begin(SD_CS))
+    {
+      Serial.println("Error talking to SD card!");
+      while(true);  // end program
+    }
+}
+
+void setup_speaker() {
+    audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+    audio.setVolume(VOLUME); // 0...21
+}
+ 
+
+void audio_eof_mp3(const char *info) {
+    active_sound = false;
+}
+
+void audio_info(const char *info) {
+    Serial.println("####### AUDIO INFO #######");
+    Serial.println(info);
+}
+
+void play_sound(String sound_name) {
+	  active_sound = true;
+    Serial.print("Playing sound: "); Serial.println(sound_name);
+    String file_name = sound_name + ".wav";
+    int str_len = file_name.length() + 1;
+    char file_name_chars[str_len];
+    file_name.toCharArray(file_name_chars, str_len);
+    audio.connecttoFS(SD, file_name_chars);
+}
+
 
