@@ -36,7 +36,7 @@ public:
   }
 };
 
-Player* player1 = new Player();
+Player* player = new Player();
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -114,8 +114,6 @@ void loop() {
   if (now - lastMsg > 20000) {
     lastMsg = now;
 
-    client.publish("sepp", String("Herr Winkla! \nIch bin nicht der Trache!!!").c_str(), true);
-
     digitalWrite(LED_BUILTIN, !alive);
   }
 
@@ -128,13 +126,13 @@ void subscribe_to_all_commands() {
   String prefix = "player/";
   String topic = "";
 
-  topic = prefix + String(player1->id) + "/health";
+  topic = prefix + String(player->id) + "/health";
   client.subscribe(topic.c_str());
 
-  topic = prefix + String(player1->id) + "/die";
+  topic = prefix + String(player->id) + "/die";
   client.subscribe(topic.c_str());
 
-  topic = prefix + String(player1->id) + "/sound";
+  topic = prefix + String(player->id) + "/sound";
   client.subscribe(topic.c_str());
 }
 
@@ -203,16 +201,16 @@ void die() {
 }
 
 void health(String value) {
-  player1->health = value.toInt();
+  player->health = value.toInt();
   String answer = "Current Health: Over 9000!";
   Serial.println();
   Serial.print("New Player Health: ");
-  Serial.print(player1->health);
+  Serial.print(player->health);
   client.publish("answer", answer.c_str(), true);
 }
 
 void sound(String value) {
-  player1->sound = value;
+  player->sound = value;
   String answer = "Never gonna sepp u up";
   Serial.println(answer);
   client.publish("answer", answer.c_str(), true);
