@@ -14,7 +14,7 @@
 #define I2S_LRC       26
 
 #define NUM_SOUNDS     8
-#define VOLUME        20
+#define VOLUME        25
 
 const char* file_names[] = {
     "aua.wav",

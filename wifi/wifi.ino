@@ -43,6 +43,7 @@ PubSubClient client(espClient);
 
 Audio audio;
 bool active_sound = false;
+bool trigger_servo = true;
 
 void setup() {
   Serial.begin(9600);
@@ -109,13 +110,6 @@ void loop() {
     reconnect();
   }
   client.loop();
-
-  long now = millis();
-  if (now - lastMsg > 20000) {
-    lastMsg = now;
-
-    digitalWrite(LED_BUILTIN, !alive);
-  }
 
   if (active_sound) {
     audio.loop();
@@ -198,6 +192,10 @@ void die() {
   String answer = "I am dying.";
   Serial.println(answer);
   client.publish("answer", answer.c_str(), true);
+  set_health_led(0);
+  tilt_Servo();
+  delay(5000);
+  set_health_led(3);
 }
 
 void health(String value) {
@@ -207,6 +205,7 @@ void health(String value) {
   Serial.print("New Player Health: ");
   Serial.print(player->health);
   client.publish("answer", answer.c_str(), true);
+  set_health_led(value.toInt());
 }
 
 void sound(String value) {

@@ -38,5 +38,4 @@ void tilt_Servo()
     }
 
     myservo.write(0);
-    delay(10000);
 }
