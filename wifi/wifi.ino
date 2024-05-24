@@ -1,14 +1,17 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 
+#include "Led.h"
+#include "Servo.h"
+#include "Proximity.h"
+
 #define wifi_ssid "DB Shop"
 #define wifi_password "Schmatzne"
 
 #define mqtt_server "192.168.35.135"
 #define mqtt_user "schwenglon"
 #define mqtt_password "schwengl"
-
-
+#define PLAYER_ID 1
 
 enum class Command {
   DIE,
@@ -17,18 +20,20 @@ enum class Command {
   INVALID
 };
 
+
 class Player {
-private:
-  inline static int count = 0;
 public:
   int id;
   int health;
+  String sound;
   Player() {
     health = 100;
-    id = count++;
+    id = PLAYER_ID;
+    sound = "";
   }
 };
-void subscribe_to_all_players(Player (&players)[4]);
+
+Player* player1 = new Player();
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -37,19 +42,16 @@ void setup() {
   Serial.begin(9600);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
+  reconnect();
+
+  setup_Servo();
+  setup_Led();
+  setup_Proximity();
+
   pinMode(LED_BUILTIN, OUTPUT);
 
-  Player* player1 = new Player();
-  Player* player2 = new Player();
-  Player* player3 = new Player();
-  Player* player4 = new Player();
-
-  client.subscribe("schwenglon");
+  subscribe_to_all_commands();
   client.setCallback(callback);
-  delay(5000);
-  Player players[] = { *player1, *player2, *player3, *player4 };
-
-  subscribe_to_all_players(players);
 }
 
 void setup_wifi() {
@@ -77,10 +79,7 @@ void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
-    // If you do not want to use a username and password, change next line to
-    // if (client.connect("ESP8266Client")) {
-    if (client.connect("quantumschmuh")) {
+    if (client.connect("quantumschmuhh")) {
       Serial.println("connected");
 
     } else {
@@ -110,11 +109,64 @@ void loop() {
 
     digitalWrite(LED_BUILTIN, !alive);
   }
-
-  // send_position(String("Aktuelle Position: bin bei deiner mama!"));
 }
 
-Command resolve_command(char* topic) {
+void subscribe_to_all_commands() {
+  String prefix = "player/";
+  String topic = "";
+
+  topic = prefix + String(player1->id) + "/health";
+  client.subscribe(topic.c_str());
+
+  topic = prefix + String(player1->id) + "/die";
+  client.subscribe(topic.c_str());
+
+  topic = prefix + String(player1->id) + "/sound";
+  client.subscribe(topic.c_str());
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  String value = "";
+  for (int i = 0; i < length; i++) {
+    value += (char)payload[i];
+  }
+  
+  char *p = topic;
+  char *str;
+  str = strtok(p, "/"); // delimiter is the semicolon
+  String id = strtok(NULL, "/");
+  String command = strtok(NULL, "/");
+
+  execute_command(command, value);
+}
+
+
+void execute_command(String command, String value) {  
+  switch (resolve_command(command.c_str())) {
+    case Command::DIE:
+      {
+        die();
+        break;
+      }
+    case Command::HEALTH:
+      {
+        health(value);
+        break;
+      }
+    case Command::SOUND:
+      {
+        sound(value);
+        break;
+      }
+    case Command::INVALID:
+      {
+        invalid_command();
+        break;
+      }
+  }
+}
+
+Command resolve_command(const char* topic) {
   if (strncmp(topic, "die", sizeof(topic)) == 0) {
     return Command::DIE;
   }
@@ -127,46 +179,6 @@ Command resolve_command(char* topic) {
   return Command::INVALID;
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
-
-  // switch (resolve_command(topic)) {
-  //   case Command::DIE:
-  //     {
-  //       die();
-  //       break;
-  //     }
-  //   case Command::HEALTH:
-  //     {
-  //       health();
-  //       break;
-  //     }
-  //   case Command::SOUND:
-  //     {
-  //       sound();
-  //       break;
-  //     }
-  //   case Command::INVALID:
-  //     {
-  //       invalid_command();
-  //       break;
-  //     }
-  // }
-  // Serial.print("Message arrived [");
-  Serial.print("By Schmattes");
-  Serial.print(topic);
-  Serial.println();
-  // Serial.print("] ");
-  // String back = "";
-  // for (int i = 0; i < length; i++) {
-  //   Serial.print((char)payload[i]);
-  //   back += (char)payload[i];
-  // }
-  // // client.publish("zurueck", back.c_str(), true);
-  // Serial.println();
-  // Republish the received message
-  // handle received message
-}
-
 void send_position(String position) {
   client.publish("position", position.c_str(), true);
 }
@@ -177,13 +189,17 @@ void die() {
   client.publish("answer", answer.c_str(), true);
 }
 
-void health() {
+void health(String value) {
+  player1->health = value.toInt();
   String answer = "Current Health: Over 9000!";
-  Serial.println(answer);
+  Serial.println();
+  Serial.print("New Player Health: ");
+  Serial.print(player1->health);
   client.publish("answer", answer.c_str(), true);
 }
 
-void sound() {
+void sound(String value) {
+  player1->sound = value;
   String answer = "Never gonna sepp u up";
   Serial.println(answer);
   client.publish("answer", answer.c_str(), true);
@@ -195,19 +211,3 @@ void invalid_command() {
   client.publish("invalid command", answer.c_str(), true);
 }
 
-void subscribe_to_all_players(Player (&players)[4]) {
-  String prefix = "player/";
-  String topic = "";
-
-  for (Player player : players) {
-    
-    topic = prefix + String(player.id) + "/health";
-    client.subscribe(topic.c_str());
-
-    topic = prefix + String(player.id) + "/die";
-    client.subscribe(topic.c_str());
-
-    topic = prefix + String(player.id) + "/sound";
-    client.subscribe(topic.c_str());
-  }
-}
