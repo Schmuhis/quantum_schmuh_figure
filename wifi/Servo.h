@@ -12,7 +12,7 @@ int servoPos = 0;    // variable to store the servo position
 // #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 // int servoPin = 7;
 // #else
-int servoPin = 18;
+int servoPin = 17;
 //#endif
 void setup_Servo()
 {

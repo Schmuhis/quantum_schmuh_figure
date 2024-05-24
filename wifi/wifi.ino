@@ -11,6 +11,7 @@
 #define mqtt_server "192.168.35.135"
 #define mqtt_user "schwenglon"
 #define mqtt_password "schwengl"
+
 #define PLAYER_ID 1
 
 enum class Command {
