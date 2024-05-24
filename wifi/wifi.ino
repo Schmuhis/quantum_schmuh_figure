@@ -14,6 +14,7 @@
 #define mqtt_password "schwengl"
 
 #define PLAYER_ID 1
+#define CLIENT_ID "quantumschmuh"
 
 enum class Command {
   DIE,
@@ -87,7 +88,7 @@ void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("quantumschmuhhh")) {
+    if (client.connect(CLIENT_ID)) {
       Serial.println("connected");
 
     } else {
