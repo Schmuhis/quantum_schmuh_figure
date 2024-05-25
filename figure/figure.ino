@@ -14,7 +14,7 @@
 #define mqtt_password "schwengl"
 
 #define PLAYER_ID 1
-#define CLIENT_ID "quantumschmuh"
+#define CLIENT_ID "quantumschmuhh"
 
 enum class Command {
   DIE,
