@@ -49,7 +49,7 @@ void setup() {
   Serial.begin(9600);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
-  reconnect();
+  // reconnect();
 
   setup_Servo();
   setup_Led();
@@ -60,7 +60,6 @@ void setup() {
 
   pinMode(LED_BUILTIN, OUTPUT);
 
-  subscribe_to_all_commands();
   client.setCallback(callback);
 }
 
@@ -91,6 +90,7 @@ void reconnect() {
     Serial.print("Attempting MQTT connection...");
     if (client.connect(CLIENT_ID)) {
       Serial.println("connected");
+      subscribe_to_all_commands();
 
     } else {
       Serial.print("failed, rc=");
