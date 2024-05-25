@@ -14,7 +14,7 @@
 #define mqtt_password "schwengl"
 
 #define PLAYER_ID 1
-#define CLIENT_ID "quantumschmuhh"
+#define CLIENT_ID "schmuh"
 
 enum class Command {
   DIE,
@@ -91,7 +91,7 @@ void reconnect() {
     if (client.connect(CLIENT_ID)) {
       Serial.println("connected");
       subscribe_to_all_commands();
-
+      play_sound("los_gehts");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
